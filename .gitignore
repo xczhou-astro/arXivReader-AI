@@ -1,0 +1,28 @@
+# macOS and editor files
+.DS_Store
+.idea/
+.vscode/
+*.iml
+
+# Local backups and design scratch files
+backups/
+docs/superpowers/
+
+# Flutter and Dart generated files
+flutter_app/.dart_tool/
+flutter_app/.flutter-plugins-dependencies
+flutter_app/.pub-cache/
+flutter_app/build/
+flutter_app/coverage/
+flutter_app/.idea/
+flutter_app/*.iml
+
+# Locally generated MarkItDown runtime bundle
+flutter_app/macos/Runner/Resources/arxiv_markitdown/
+
+# Local application data and credentials
+cache/
+configs.ini
+*.log
+*.pyc
+__pycache__/
