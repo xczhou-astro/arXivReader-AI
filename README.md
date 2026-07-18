@@ -69,6 +69,11 @@ The packaged app is generated under
 `flutter_app/build/macos/Build/Products/Release/` and is intentionally ignored
 by Git.
 
+The shared Xcode project uses ad-hoc signing and does not contain a developer
+team, so local builds do not require an Apple Developer Program membership. To
+distribute an app to other people, select your own Team in Xcode and sign the
+release with a Developer ID certificate before notarizing it.
+
 ## Platform Status
 
 macOS is supported. The Flutter UI and Dart services are designed to be
