@@ -34,20 +34,24 @@ repository.
 
 ## Development
 
-Install Flutter and the macOS desktop development tools, then run:
+Install Flutter, the macOS desktop development tools, and Python 3.10 or later.
+The script defaults to `python3`; if your current Python is elsewhere, supply
+it with `PYTHON3_BIN=/path/to/python3`. The
+one-command build script creates a project-local Python virtual environment,
+installs MarkItDown and PyInstaller there, bundles the helper, and builds the
+app. It does not require Conda or globally installed Python packages:
+
+```bash
+cd flutter_app
+./tools/build_macos_release.sh
+```
+
+For development without a release build:
 
 ```bash
 cd flutter_app
 flutter pub get
 flutter run -d macos
-```
-
-Before the first macOS build, generate the local MarkItDown helper. The script
-uses the `ai` Conda environment and PyInstaller:
-
-```bash
-cd flutter_app
-./tools/build_markitdown_onedir.sh
 ```
 
 Run checks with:
@@ -56,13 +60,6 @@ Run checks with:
 cd flutter_app
 flutter test
 flutter analyze
-```
-
-Build a release app with:
-
-```bash
-cd flutter_app
-flutter build macos --release
 ```
 
 The packaged app is generated under

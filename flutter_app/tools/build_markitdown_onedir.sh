@@ -5,11 +5,18 @@ APP_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 BUILD_ROOT="$APP_ROOT/build/markitdown_pyinstaller"
 DIST_ROOT="$BUILD_ROOT/dist"
 RESOURCE_ROOT="$APP_ROOT/macos/Runner/Resources/arxiv_markitdown"
+PYTHON_BIN="${MARKITDOWN_PYTHON:-$APP_ROOT/.build-venv/bin/python}"
+
+if [[ ! -x "$PYTHON_BIN" ]]; then
+  echo "Missing isolated Python environment: $PYTHON_BIN" >&2
+  echo "Run ./tools/build_macos_release.sh first." >&2
+  exit 1
+fi
 
 rm -rf "$BUILD_ROOT" "$RESOURCE_ROOT"
 mkdir -p "$BUILD_ROOT" "$(dirname "$RESOURCE_ROOT")"
 
-conda run -n ai pyinstaller \
+"$PYTHON_BIN" -m PyInstaller \
   --clean \
   --noconfirm \
   --onedir \
