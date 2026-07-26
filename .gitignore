@@ -11,6 +11,7 @@ docs/superpowers/
 # Flutter and Dart generated files
 flutter_app/.dart_tool/
 flutter_app/.build-venv/
+flutter_app/.build-venv-windows/
 flutter_app/.flutter-plugins-dependencies
 flutter_app/.pub-cache/
 flutter_app/build/
@@ -20,6 +21,7 @@ flutter_app/*.iml
 
 # Locally generated MarkItDown runtime bundle
 flutter_app/macos/Runner/Resources/arxiv_markitdown/
+flutter_app/windows/runner/resources/arxiv_markitdown/
 
 # Local application data and credentials
 cache/

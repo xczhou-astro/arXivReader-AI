@@ -1314,15 +1314,27 @@ class _ReaderHomePageState extends State<ReaderHomePage> {
   }
 
   Future<void> _openPath(String path) async {
-    ProcessResult result;
     if (Platform.isMacOS) {
-      result = await Process.run('open', [path]);
-    } else if (Platform.isWindows) {
-      result = await Process.run('explorer', [path]);
-    } else {
-      result = await Process.run('xdg-open', [path]);
+      final result = await Process.run('open', [path]);
+      if (result.exitCode != 0) {
+        throw Exception(result.stderr.toString().trim());
+      }
+      return;
     }
 
+    if (Platform.isWindows) {
+      // Explorer is normally a long-lived shell process. Waiting for it with
+      // Process.run can report a spurious non-zero result even when it opens
+      // the requested file or folder successfully.
+      await Process.start(
+        'explorer.exe',
+        [path],
+        mode: ProcessStartMode.detached,
+      );
+      return;
+    }
+
+    final result = await Process.run('xdg-open', [path]);
     if (result.exitCode != 0) {
       throw Exception(result.stderr.toString().trim());
     }
@@ -4341,9 +4353,9 @@ class MarkItDownService {
     required File pdfFile,
     required File markdownFile,
   }) async {
-    if (!Platform.isMacOS) {
+    if (!Platform.isMacOS && !Platform.isWindows) {
       throw Exception(
-        'Local PDF-to-Markdown conversion is currently available on macOS only.',
+        'Local PDF-to-Markdown conversion is available in the macOS and Windows desktop apps only.',
       );
     }
 
@@ -4372,6 +4384,11 @@ class MarkItDownService {
 
   File _bundledExecutable() {
     final appExecutable = File(Platform.resolvedExecutable);
+    if (Platform.isWindows) {
+      return File(
+        '${appExecutable.parent.path}/data/arxiv_markitdown/arxiv_markitdown.exe',
+      );
+    }
     return File(
       '${appExecutable.parent.parent.path}/Resources/arxiv_markitdown/arxiv_markitdown',
     );
@@ -4799,16 +4816,12 @@ class AppCacheService {
   }
 
   Future<String> _defaultDocumentsPath(String defaultLeafPath) async {
-    final home = Platform.environment['HOME'];
-    if (home == null || home.isEmpty) {
-      final documentsDirectory = await getApplicationDocumentsDirectory();
-      return '${documentsDirectory.path}/$defaultLeafPath';
-    }
-    return '$home/Documents/$defaultLeafPath';
+    final documentsDirectory = await getApplicationDocumentsDirectory();
+    return '${documentsDirectory.path}/$defaultLeafPath';
   }
 
   String _normalizePath(String path) {
-    return path.replaceAll(RegExp(r'/+$'), '');
+    return path.replaceAll('\\', '/').replaceAll(RegExp(r'/+$'), '');
   }
 
   Future<void> _migrateDocumentsRootCacheIfNeeded(Directory cacheRoot) async {
@@ -5122,6 +5135,10 @@ class AppSettings {
 
 class AppStartupService {
   Future<void> syncLaunchAtLogin(bool enabled) async {
+    if (Platform.isWindows) {
+      await _syncWindowsLaunchAtLogin(enabled);
+      return;
+    }
     if (!Platform.isMacOS) {
       return;
     }
@@ -5143,6 +5160,33 @@ class AppStartupService {
     await file.parent.create(recursive: true);
     await file.writeAsString(_launchAgentPlist(appBundlePath));
     await Process.run('launchctl', ['load', file.path]);
+  }
+
+  Future<void> _syncWindowsLaunchAtLogin(bool enabled) async {
+    const key = r'HKCU\Software\Microsoft\Windows\CurrentVersion\Run';
+    const valueName = 'ArxivReaderAI';
+    final arguments = enabled
+        ? <String>[
+            'add',
+            key,
+            '/v',
+            valueName,
+            '/t',
+            'REG_SZ',
+            '/d',
+            '"${Platform.resolvedExecutable}"',
+            '/f',
+          ]
+        : <String>['delete', key, '/v', valueName, '/f'];
+    final result = await Process.run('reg', arguments);
+    if (result.exitCode != 0 && !(!enabled && result.exitCode == 1)) {
+      final details = result.stderr.toString().trim();
+      throw Exception(
+        details.isEmpty
+            ? 'Windows could not update the launch-at-login setting.'
+            : details,
+      );
+    }
   }
 
   Future<File> _launchAgentFile() async {
@@ -5885,8 +5929,7 @@ class _SettingsPageState extends State<SettingsPage> {
                         const SizedBox(height: 16),
                         _SettingsSection(
                           title: 'About',
-                          subtitle:
-                              'Product details for the local macOS build.',
+                          subtitle: 'Product details for this desktop build.',
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -5902,7 +5945,7 @@ class _SettingsPageState extends State<SettingsPage> {
                               _InfoLine(
                                 label: 'Local storage',
                                 value:
-                                    'API keys stay on this Mac via app settings.',
+                                    'API keys stay on this device via app settings.',
                               ),
                             ],
                           ),
@@ -5937,28 +5980,31 @@ class _SettingsPageState extends State<SettingsPage> {
                           ),
                         ),
                         const SizedBox(height: 16),
-                        _SettingsSection(
-                          title: 'Startup',
-                          subtitle:
-                              'Keep the app available in the menu bar after sign-in.',
-                          child: Column(
-                            children: [
-                              SwitchListTile(
-                                value: _launchAtLogin,
-                                contentPadding: EdgeInsets.zero,
-                                title: const Text('Launch app at login'),
-                                subtitle: const Text(
-                                  'Open the macOS app automatically when you sign in.',
+                        if (Platform.isMacOS || Platform.isWindows)
+                          _SettingsSection(
+                            title: 'Startup',
+                            subtitle:
+                                'Start the app automatically when you sign in.',
+                            child: Column(
+                              children: [
+                                SwitchListTile(
+                                  value: _launchAtLogin,
+                                  contentPadding: EdgeInsets.zero,
+                                  title: const Text('Launch app at login'),
+                                  subtitle: Text(
+                                    Platform.isWindows
+                                        ? 'Open the Windows app automatically when you sign in.'
+                                        : 'Open the macOS app automatically when you sign in.',
+                                  ),
+                                  onChanged: (value) {
+                                    setState(() {
+                                      _launchAtLogin = value;
+                                    });
+                                  },
                                 ),
-                                onChanged: (value) {
-                                  setState(() {
-                                    _launchAtLogin = value;
-                                  });
-                                },
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
-                        ),
                       ],
                     ),
                   ),

@@ -4,7 +4,7 @@ project(flutter_app LANGUAGES CXX)
 
 # The name of the executable created for the application. Change this to change
 # the on-disk name of your application.
-set(BINARY_NAME "flutter_app")
+set(BINARY_NAME "ArxivReaderAI")
 
 # Explicitly opt in to modern CMake behaviors to avoid warnings with recent
 # versions of CMake.
@@ -101,6 +101,14 @@ install(CODE "
   " COMPONENT Runtime)
 install(DIRECTORY "${PROJECT_BUILD_DIR}/${FLUTTER_ASSET_DIR_NAME}"
   DESTINATION "${INSTALL_BUNDLE_DATA_DIR}" COMPONENT Runtime)
+
+# The Windows release build places the PyInstaller MarkItDown bundle beside
+# Flutter's data directory so Dart can launch it without a system Python.
+set(MARKITDOWN_BUNDLE_DIR "${CMAKE_SOURCE_DIR}/runner/resources/arxiv_markitdown")
+if(EXISTS "${MARKITDOWN_BUNDLE_DIR}")
+  install(DIRECTORY "${MARKITDOWN_BUNDLE_DIR}"
+    DESTINATION "${INSTALL_BUNDLE_DATA_DIR}" COMPONENT Runtime)
+endif()
 
 # Install the AOT library on non-Debug builds only.
 install(FILES "${AOT_LIBRARY}" DESTINATION "${INSTALL_BUNDLE_DATA_DIR}"
