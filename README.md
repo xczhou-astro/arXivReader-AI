@@ -32,6 +32,14 @@ The current release targets macOS and Windows and is built with Flutter.
 API keys are stored locally in the app settings and are never committed to this
 repository.
 
+## Windows download and run
+
+Download `ArxivReaderAI-v0.1.0-windows-x64.zip` from the
+[v0.1.0 release](https://github.com/xczhou-astro/arXivReader-AI/releases/tag/v0.1.0),
+then extract the entire archive and run `ArxivReaderAI.exe`. Keep all extracted
+files together: the app depends on its adjacent DLLs, Flutter data directory,
+and bundled MarkItDown converter. End users do not need to install Python.
+
 ## Development
 
 Install Flutter, the desktop development tools for your platform, and Python 3.10 or later.
@@ -55,6 +63,10 @@ cd flutter_app
 
 If PowerShell blocks locally checked-out scripts, run it once with
 `powershell -ExecutionPolicy Bypass -File .\tools\build_windows_release.ps1`.
+
+Windows development and release builds also require Visual Studio with the
+**Desktop development with C++** workload and Windows Developer Mode enabled;
+the latter allows Flutter plugins to create symbolic links.
 
 For development without a release build:
 
